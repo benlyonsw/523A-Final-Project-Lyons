@@ -20,7 +20,8 @@ ui <- fluidPage(
   titlePanel("Global Warming Potential Calculator"),
   
   h5(
-    "In this app you can calculate the 100-year GWP of six different greenhouse gases.
+    "In this app you can calculate the 100-year GWP of six different greenhouse gases, as well as
+the 20-year GWP of methane.
 Default 100-year GWP values are from the IPCC Fifth Assessment, Working Group 1, Chapter 8,
 Table 8.7."
   ),
@@ -38,6 +39,7 @@ Table 8.7."
       # Input: Greenhouse Gases
       numericInput("CO2", "Carbon Dioxide", 0, min = 0, max = (1*10^100)),
       numericInput("CH4", "Methane", 0, min = 0, max = (1*10^100)),
+      numericInput("CH4.20", "Methane 20 years", 0, min = 0, max = (1*10^100)),
       numericInput("N2O", "Nitrous Oxide", 0, min = 0, max = (1*10^100)),
       numericInput("HFC.134a", "HFC-134a", 0, min = 0, max = (1*10^100)),
       numericInput("CFC.11", "CFC-11", 0, min = 0, max = (1*10^100)),
@@ -53,11 +55,13 @@ server <- function(input, output){
   
   # Make a reactive object to graph
   CO2Equivalents <- reactive({
-
-  # Input units
+    
+    # Input units
     CO2 = input$CO2
     
     CH4 = input$CH4
+    
+    CH4.20 = input$CH4.20 
     
     N2O = input$N2O
     
@@ -70,6 +74,8 @@ server <- function(input, output){
     CO2.units = as.character(input$unit)
     
     CH4.units = as.character(input$unit)
+    
+    CH4.20.units = as.character(input$unit)
     
     N2O.units = as.character(input$unit)
     
@@ -84,6 +90,8 @@ server <- function(input, output){
     if(CO2 == 0) {CO2.units <- "kt"}
     
     if(CH4 == 0) {CH4.units <- "kt"}
+    
+    if(CH4.20 == 0) {CH4.20.units <- "kt"}
     
     if(N2O == 0) {N2O.units <- "kt"}
     
@@ -106,7 +114,14 @@ server <- function(input, output){
     (CH4.units == "kt") {CH4.kt <- CH4} else if
     (CH4.units == "Mt") {CH4.kt <- CH4*1000} else if
     (CH4.units == "Gg") {CH4.kt <- CH4} else if
-    (CH4.units == "Tg") {CH4.kt <- CO2*1000} else if
+    (CH4.units == "Tg") {CH4.kt <- CH4*1000} else if
+    (!CH4.units %in% units) {stop("Methane input must be in one of the following units: t, kt, Mt, Gg, Tg!")}
+    
+    if(CH4.20.units == "t") {CH4.20.kt <- CH4.20/1000} else if
+    (CH4.20.units == "kt") {CH4.20.kt <- CH4.20} else if
+    (CH4.20.units == "Mt") {CH4.20.kt <- CH4.20*1000} else if
+    (CH4.20.units == "Gg") {CH4.20.kt <- CH4.20} else if
+    (CH4.20.units == "Tg") {CH4.20.kt <- CH4*1000} else if
     (!CH4.units %in% units) {stop("Methane input must be in one of the following units: t, kt, Mt, Gg, Tg!")}
     
     if(N2O.units == "t") {N2O.kt <- N2O/1000} else if
@@ -141,6 +156,7 @@ server <- function(input, output){
     
     CO2.eq <- (CO2.kt*1)
     CH4.CO2.eq <- (CH4.kt*28)
+    CH4.20.CO2.eq <- (CH4.20.kt*86)
     N2O.CO2.eq <- (N2O.kt*265)
     HFC.134a.CO2.eq <- (HFC.134a.kt*1300)
     CFC.11.CO2.eq <- (CFC.11.kt*4660)
@@ -148,10 +164,10 @@ server <- function(input, output){
     
     ####### Generate data frame.
     
-    CO2Data <- data.frame("Greenhouse_Gas" = c("Carbon Dioxide", "Methane", "Nitrous Oxide",
-                                                      "HFC-134a", "CFC-11", "CF4"),
-                                 "Kilotons_CO2e" = c(CO2.eq, CH4.CO2.eq, N2O.CO2.eq, HFC.134a.CO2.eq,
-                                                     CFC.11.CO2.eq, CF4.CO2.eq))
+    CO2Data <- data.frame("Greenhouse_Gas" = c("Carbon Dioxide", "Methane", "Methane 20 years", "Nitrous Oxide",
+                                               "HFC-134a", "CFC-11", "CF4"),
+                          "Kilotons_CO2e" = c(CO2.eq, CH4.CO2.eq, CH4.20.CO2.eq, N2O.CO2.eq, HFC.134a.CO2.eq,
+                                              CFC.11.CO2.eq, CF4.CO2.eq))
     
     return(CO2Data)
     
